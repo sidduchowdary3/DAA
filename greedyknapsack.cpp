@@ -1,11 +1,12 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>  // Required for sort function
+#include <algorithm>
 using namespace std;
 
 struct item {
     int weight;
     int value;
+    int index;
 };
 
 bool compare(item a, item b) {
@@ -14,27 +15,29 @@ bool compare(item a, item b) {
     return r1 > r2;
 }
 
-// This function now returns a pair of double and int, representing total value and total weight, respectively
-pair<double, int> greedyKnapsack(vector<item>& items, int capacity) {
-    // Sort items based on value-to-weight ratio in descending order
+pair<pair<double, int>, vector<pair<int, double>>> greedyKnapsack(vector<item>& items, int capacity) {
     sort(items.begin(), items.end(), compare);
 
-    double totalValue = 0.0;  // Total value accumulated
-    int currentWeight = 0;    // Current weight in the knapsack
+    double totalValue = 0.0;
+    int currentWeight = 0;
+    vector<pair<int, double>> solution;
 
     for (int i = 0; i < items.size(); i++) {
         if (currentWeight + items[i].weight <= capacity) {
             totalValue += items[i].value;
             currentWeight += items[i].weight;
+            solution.push_back(make_pair(items[i].index, 1));
         } else {
             int remainingCapacity = capacity - currentWeight;
-            totalValue += (double)remainingCapacity * items[i].value / items[i].weight;
+            double fraction = (double)remainingCapacity / items[i].weight;
+            totalValue += remainingCapacity * items[i].value / items[i].weight;
             currentWeight += remainingCapacity;
-            break;  // Knapsack is full
+            solution.push_back(make_pair(items[i].index, fraction));
+            break;
         }
     }
 
-    return {totalValue, currentWeight};  // Return both total value and weight
+    return {{totalValue, currentWeight}, solution};
 }
 
 int main() {
@@ -47,17 +50,22 @@ int main() {
     cin >> numItems;
 
     vector<item> items(numItems);
-    cout << "Enter weight and value for each item:" << endl;
+    cout << "Enter weight and value for each item:";
     for (int i = 0; i < numItems; i++) {
         cin >> items[i].weight >> items[i].value;
+        items[i].index = i;
     }
 
-    // Retrieve the maximum value and the weight carried
     auto result = greedyKnapsack(items, capacity);
-    double maxVal = result.first;
-    int maxWeight = result.second;
+    double maxVal = result.first.first;
+    int maxWeight = result.first.second;
+    auto solution = result.second;
 
     cout << "Maximum value: " << maxVal << endl;
     cout << "Maximum weight used: " << maxWeight << endl;
+    cout << "Items included (index and fraction):";
+    for (auto& s : solution) {
+        cout << "Item " << s.first << " included fraction: " << s.second << endl;
+    }
     return 0;
 }
